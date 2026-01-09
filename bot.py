@@ -5,19 +5,14 @@ from threading import Thread
 from flask import Flask
 import os
 
-# 1. SERVIDOR PARA O RENDER NÃO DAR ERRO VERMELHO
+# Configuração do Servidor Web para o Render
 app = Flask('')
 
 @app.route('/')
 def home():
     return "Bot Online"
 
-def run_web():
-    # O Render exige que o bot escute nesta porta
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
-
-# 2. CONFIGURAÇÕES DO SEU BOT
+# Configurações do Bot
 API_TOKEN = '8104662316:AAGJlNxWeUMUDDB5Zizte3vsBoiOlLqIzHg'
 ID_CANAL = -1002167637171
 bot = telebot.TeleBot(API_TOKEN)
@@ -41,38 +36,25 @@ def criar_markup():
     markup.add(types.InlineKeyboardButton("Pague agora R$25,00", callback_data='ver_pix'))
     return markup
 
-# 3. FUNÇÃO DE POSTAGEM A CADA 30 MINUTOS (1800 SEGUNDOS)
 def postagem_automatica():
     while True:
         try:
             bot.send_video(ID_CANAL, video_url, caption=texto_venda, reply_markup=criar_markup())
-            print("Postagem automática de 30 min feita!")
+            print("Postagem automática realizada!")
         except Exception as e:
             print(f"Erro na postagem: {e}")
-        time.sleep(1800) 
+        time.sleep(1800) # 30 minutos
 
-# 4. INICIALIZAÇÃO (O SEGREDO PARA NÃO TRAVAR)
-if __name__ == "__main__":
-    # Inicia o servidor web primeiro
-    Thread(target=run_web).start()
-    # Inicia a postagem automática em seguida
+# Função para rodar o bot e o servidor juntos
+def run_everything():
+    # Inicia a thread da postagem
     Thread(target=postagem_automatica).start()
-
-    @bot.message_handler(commands=['postar', 'start'])
-    def atender_comandos(message):
-        bot.send_video(message.chat.id, video_url, caption=texto_venda, reply_markup=criar_markup())
-
-    @bot.callback_query_handler(func=lambda call: call.data == 'ver_pix')
-    def responder_pix(call):
-        texto_pix = (
-            "✅ *CHAVE PIX LIBERADA!* \n\n"
-            "📍 *COPIE O E-MAIL ABAIXO:*\n"
-            "`proibidopagamento@gmail.com` \n\n"
-            "💰 *VALOR:* R$ 25,00\n\n"
-            "📩 *APÓS O PAGAMENTO:* \n"
-            "Envie o comprovante para: https://t.me/feeeproibidao"
-        )
-        bot.send_message(call.message.chat.id, texto_pix, parse_mode='Markdown')
-
-    print("Bot rodando com sucesso!")
+    # Inicia o bot
     bot.polling(none_stop=True)
+
+if __name__ == "__main__":
+    # O segredo: rodar o bot em background e deixar o Flask no comando principal
+    Thread(target=run_everything).start()
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
+    
