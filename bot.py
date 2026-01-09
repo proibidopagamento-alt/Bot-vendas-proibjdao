@@ -54,4 +54,4 @@ if __name__ == "__main__":
     # LIGA O SERVIDOR NA FRENTE (O QUE O RENDER QUER VER)
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
-        
+    
