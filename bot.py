@@ -1,4 +1,4 @@
-import telebot
+AAGJlNxWeUMUDDB5Zizte3vsBoiOlLqIzHg'xWeUMUDDB5Zizte3vsBoiOlLqIzHg' telebot
 from telebot import types
 import time
 from threading import Thread
