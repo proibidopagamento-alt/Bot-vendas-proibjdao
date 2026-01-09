@@ -2,6 +2,17 @@ import telebot
 from telebot import types
 import time
 from threading import Thread
+from flask import Flask
+import os
+
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot Online"
+
+def run_web():
+    app.run(host='0.0.0.0', port=10000)
 
 API_TOKEN = '8104662316:AAGJlNxWeUMUDDB5Zizte3vsBoiOlLqIzHg'
 ID_CANAL = -1002167637171
@@ -28,51 +39,33 @@ texto_venda = (
 
 video_url = "https://drive.google.com/uc?export=download&id=1PTQBpZEEQ6WajLPXpaEN8OU9PHrEZ08j"
 
-# FUNÇÃO DE POSTAGEM AUTOMÁTICA
 def postagem_automatica():
     while True:
         try:
             bot.send_video(ID_CANAL, video_url, caption=texto_venda, reply_markup=criar_markup())
-            print("Postagem automática realizada!")
+            print("Postagem realizada!")
         except Exception as e:
-            print(f"Erro na postagem automática: {e}")
-        
-        # ESPERA 1000 SEGUNDOS
+            print(f"Erro: {e}")
         time.sleep(1000) 
 
-# Inicia o temporizador em segundo plano
+Thread(target=run_web).start()
 Thread(target=postagem_automatica).start()
 
-@bot.message_handler(commands=['postar'])
-def postar_manual(message):
-    try:
-        bot.send_video(ID_CANAL, video_url, caption=texto_venda, reply_markup=criar_markup())
-        bot.reply_to(message, "✅ Postado manualmente no Canal!")
-    except Exception as e:
-        bot.reply_to(message, f"❌ Erro: {e}")
-
-@bot.message_handler(commands=['start'])
-def mensagem_venda(message):
+@bot.message_handler(commands=['postar', 'start'])
+def atender_comandos(message):
     bot.send_video(message.chat.id, video_url, caption=texto_venda, reply_markup=criar_markup())
 
 @bot.callback_query_handler(func=lambda call: call.data == 'ver_pix')
-def responder_clique_pix(call):
+def responder_pix(call):
     texto_pix = (
         "✅ *CHAVE PIX LIBERADA!* \n\n"
         "📍 *COPIE O E-MAIL ABAIXO:*\n"
         "`proibidopagamento@gmail.com` \n\n"
         "💰 *VALOR:* R$ 25,00\n\n"
-        "━━━━━━━━━━━━━━━━━━━━\n"
         "📩 *APÓS O PAGAMENTO:* \n"
-        "Envie o comprovante agora para o link abaixo:\n"
-        "👉 https://t.me/feeeproibidao \n"
-        "━━━━━━━━━━━━━━━━━━━━\n"
+        "Envie o comprovante agora para: https://t.me/feeeproibidao"
     )
     bot.send_message(call.message.chat.id, texto_pix, parse_mode='Markdown')
-    bot.answer_callback_query(call.id)
 
-print("Bot Iniciado - Postagens a cada 1000 segundos.")
-bot.polling()
-
-print("Bot de Vendas Online iniciado...")
-bot.polling()
+print("Bot iniciado!")
+bot.polling(none_stop=True)
