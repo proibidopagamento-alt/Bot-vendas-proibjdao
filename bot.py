@@ -5,14 +5,13 @@ from threading import Thread
 from flask import Flask
 import os
 
-# Configuração do Servidor Web para o Render
 app = Flask('')
 
 @app.route('/')
 def home():
     return "Bot Online"
 
-# CONFIGURAÇÕES DO BOT - VERIFIQUE O TOKEN E O ID
+# CONFIGURAÇÕES
 API_TOKEN = '8104662316:AAGJlNxWeUMUDDB5Zizte3vsBoiOlLqIzHg'
 ID_CANAL = -1002167637171
 bot = telebot.TeleBot(API_TOKEN)
@@ -43,16 +42,21 @@ def postagem_automatica():
             print("Postagem realizada com sucesso!")
         except Exception as e:
             print(f"Erro na postagem: {e}")
-        time.sleep(1800) # Posta a cada 30 minutos
+        time.sleep(1800)
 
 if __name__ == "__main__":
-    # Inicia a postagem automática em uma tarefa separada
-    Thread(target=postagem_automatica).start()
+    # 1. Inicia a postagem automática
+    Thread(target=postagem_automatica, daemon=True).start()
     
-    # Inicia o Polling do bot em uma tarefa separada
-    Thread(target=lambda: bot.infinity_polling(timeout=10, long_polling_timeout=5)).start()
+    # 2. Inicia o Polling do Telegram
+    Thread(target=lambda: bot.infinity_polling(timeout=20, long_polling_timeout=10), daemon=True).start()
     
-    # Inicia o Flask na porta 10000 (O que o Render precisa)
+    # 3. Tenta ligar o servidor na porta 10000 (O que o Render pede)
     port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port)
-    
+    try:
+        app.run(host='0.0.0.0', port=port)
+    except Exception as e:
+        print(f"Porta {port} ocupada, mas o bot continua rodando em segundo plano!")
+        while True: # Mantém o processo vivo
+            time.sleep(60)
+            
