@@ -3,8 +3,8 @@ from telebot import types
 import time
 from threading import Thread
 from flask import Flask
-import os
 
+# Servidor de suporte para o Render não desligar o bot
 app = Flask('')
 @app.route('/')
 def home(): return "Bot Online"
@@ -37,12 +37,13 @@ def postagem_automatica():
     while True:
         try:
             bot.send_video(ID_CANAL, video_url, caption=texto_venda, reply_markup=criar_markup())
-            print("Postagem de 30 min realizada!")
+            print("Postagem de 30 min realizada com sucesso!")
         except Exception as e:
-            print(f"Erro: {e}")
+            print(f"Erro na postagem: {e}")
         # 1800 segundos = 30 minutos
         time.sleep(1800)
 
+# Inicia o servidor Web e a Postagem Automática
 Thread(target=run_web).start()
 Thread(target=postagem_automatica).start()
 
