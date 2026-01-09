@@ -23,7 +23,8 @@ def mensagem_venda(message):
         "🤤😈⚡🔥😈"
     )
 
-    video_url = "https://drive.google.com/uc?export=download&id=1k9r0J1AzOpJD-oiaQuchQ-k4ogjkAfcI"
+    # NOVO LINK DO VÍDEO ATUALIZADO ABAIXO
+    video_url = "https://drive.google.com/uc?export=download&id=1PTQBpZEEQ6WajLPXpaEN8OU9PHrEZ08j"
 
     try:
         bot.send_video(
