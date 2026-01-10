@@ -10,19 +10,21 @@ app = Flask('')
 
 @app.route('/')
 def home():
-    return "BOT ONLINE"
+    return "SISTEMA VIP ONLINE"
 
-# 2. CONFIGURAÇÕES
+# 2. CONFIGURAÇÕES PRINCIPAIS
 API_TOKEN = '8104662316:AAGJlNxWeUMUDDB5Zizte3vsBoiOlLqIzHg'
 ID_CANAL = -1002167637171
 MEU_ID_PESSOAL = 5918744817 
-bot = telebot.TeleBot(API_TOKEN)
 
-# COLOQUEI O LINK EXATO QUE APARECE NO SEU PRINT QUE FUNCIONOU
+# LINKS ATUALIZADOS
+LINK_GRUPO_VIP = "https://t.me/+UQBVUWlCHnBhOGEx"
 LINK_PAGAMENTO = "https://invoice.infinitepay.io/vippagamentos25/2LnWW6CO21"
-
 video_url = "https://drive.google.com/uc?export=download&id=1PTQBpZEEQ6WajLPXpaEN8OU9PHrEZ08j"
 
+bot = telebot.TeleBot(API_TOKEN)
+
+# TEXTO DE VENDA
 texto_venda = (
     "😈 *OII ESTOU ON...* 😈\n\n"
     "VEM SE DIVERTIR NO MEU GRUPINHO VIP VEM...\n"
@@ -31,37 +33,58 @@ texto_venda = (
     "😉🔥😉🔥😉\n\n"
     "✅ *PAGAMENTO ÚNICO DE R$ 25 (VITALÍCIO)*\n\n"
     "💳 Pague no PIX ou CARTÃO pelo botão abaixo!\n\n"
-    "⚠️ Após pagar, envie o comprovante em:\n"
-    "👉 https://t.me/feeeproibidao"
+    "⚠️ Após pagar, envie o comprovante **AQUI NO BOT** para receber seu acesso imediato! 🤤"
 )
 
 def criar_markup():
     markup = types.InlineKeyboardMarkup()
-    # Adicionando o botão com o link que você confirmou que funciona no navegador
-    botao_pagar = types.InlineKeyboardButton("🚀 CLIQUE AQUI PARA PAGAR R$ 25", url=LINK_PAGAMENTO)
-    markup.add(botao_pagar)
+    markup.add(types.InlineKeyboardButton("🚀 PAGAR R$ 25,00 AGORA", url=LINK_PAGAMENTO))
     return markup
 
-# 3. POSTAGEM AUTOMÁTICA
+# --- FUNÇÃO DE RECEBER COMPROVANTE ---
+@bot.message_handler(content_types=['photo'])
+def receber_comprovante(message):
+    bot.reply_to(message, "✅ Comprovante recebido! Estamos analisando. Em instantes você receberá o link de acesso aqui.")
+    
+    # Envia para você aprovar no seu privado
+    markup = types.InlineKeyboardMarkup()
+    btn_aprovar = types.InlineKeyboardButton("✅ APROVAR E MANDAR LINK", callback_data=f"liberar_{message.chat.id}")
+    btn_recusar = types.InlineKeyboardButton("❌ RECUSAR", callback_data=f"recusar_{message.chat.id}")
+    markup.add(btn_aprovar, btn_recusar)
+    
+    bot.send_photo(MEU_ID_PESSOAL, message.photo[-1].file_id, 
+                   caption=f"📩 *NOVO PAGAMENTO*\nUsuário: @{message.from_user.username}\nID: `{message.chat.id}`", 
+                   parse_mode="Markdown", reply_markup=markup)
+
+# --- BOTÕES DE APROVAÇÃO (SÓ VOCÊ VÊ) ---
+@bot.callback_query_handler(func=lambda call: call.data.startswith('liberar_'))
+def aprovar(call):
+    cliente_id = call.data.split("_")[1]
+    # Envia o link que você me mandou agora
+    bot.send_message(cliente_id, f"🥳 *PAGAMENTO APROVADO!*\n\nSeja bem-vindo(a)! Entre no link abaixo para acessar o conteúdo:\n\n👉 {LINK_GRUPO_VIP}", parse_mode="Markdown")
+    
+    # Atualiza a mensagem para você saber que já foi feito
+    bot.edit_message_caption("✅ *MENSAGEM DE ACESSO ENVIADA!*", chat_id=MEU_ID_PESSOAL, message_id=call.message.id)
+    bot.answer_callback_query(call.id, "Link enviado ao cliente!")
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('recusar_'))
+def recusar(call):
+    cliente_id = call.data.split("_")[1]
+    bot.send_message(cliente_id, "❌ Seu comprovante não foi aprovado. Verifique se o valor está correto e tente novamente.")
+    bot.edit_message_caption("❌ *PAGAMENTO RECUSADO*", chat_id=MEU_ID_PESSOAL, message_id=call.message.id)
+
+# --- POSTAGEM AUTOMÁTICA NO CANAL ---
 def postagem_automatica():
     while True:
         try:
             bot.send_video(ID_CANAL, video_url, caption=texto_venda, reply_markup=criar_markup(), parse_mode="Markdown")
-            print("Postagem automática ok!")
-        except Exception as e:
-            print(f"Erro: {e}")
+        except: pass
         time.sleep(1800)
 
-# 4. COMANDOS
+# --- COMANDO START ---
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     bot.send_video(message.chat.id, video_url, caption=texto_venda, reply_markup=criar_markup(), parse_mode="Markdown")
-
-@bot.message_handler(commands=['postar'])
-def postar_manual(message):
-    if message.from_user.id == MEU_ID_PESSOAL:
-        bot.send_video(ID_CANAL, video_url, caption=texto_venda, reply_markup=criar_markup(), parse_mode="Markdown")
-        bot.reply_to(message, "✅ Postado!")
 
 if __name__ == "__main__":
     Thread(target=postagem_automatica, daemon=True).start()
