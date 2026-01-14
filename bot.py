@@ -1,22 +1,21 @@
 import os
 import threading
-import asyncio
 from flask import Flask
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-# 1. Servidor Flask (Para o Render ficar Live)
+# --- SERVIDOR FLASK ---
 app = Flask(__name__)
 
 @app.route('/')
-def index():
-    return "BOT ONLINE"
+def health_check():
+    return "Bot Online", 200
 
 def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
-# 2. Configurações do Bot
+# --- CONFIGURAÇÕES ---
 TOKEN = "7287694923:AAGkz7SV5oQGKQ65NTleSeq_xVhuglutWL8"
 VIDEO = "https://drive.google.com/uc?export=download&id=1g2HaGHeJaL3k_n5rHc61q3wlHOpqFp-N"
 GRUPO_ID = "-1002167637171"
@@ -34,26 +33,30 @@ TEXTO = (
 
 BOTAO = InlineKeyboardMarkup([[InlineKeyboardButton("💳 PAGAR R$ 25,00 AGORA", url=LINK_PAGAR)]])
 
-# 3. Funções de Resposta
-async def start(update, context):
-    await update.message.reply_video(video=VIDEO, caption=TEXTO, reply_markup=BOTAO, parse_mode='Markdown')
+# --- FUNÇÕES ---
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.send_video(chat_id=update.effective_chat.id, video=VIDEO, caption=TEXTO, reply_markup=BOTAO, parse_mode='Markdown')
 
-async def postar(context):
-    await context.bot.send_video(chat_id=GRUPO_ID, video=VIDEO, caption=TEXTO, reply_markup=BOTAO, parse_mode='Markdown')
+async def postar_no_grupo(context: ContextTypes.DEFAULT_TYPE):
+    try:
+        await context.bot.send_video(chat_id=GRUPO_ID, video=VIDEO, caption=TEXTO, reply_markup=BOTAO, parse_mode='Markdown')
+    except Exception as e:
+        print(f"Erro no grupo: {e}")
 
-# 4. Inicialização Segura
+# --- EXECUÇÃO ---
 if __name__ == '__main__':
-    # Inicia o Flask em segundo plano
-    t = threading.Thread(target=run_flask)
-    t.daemon = True
-    t.start()
+    # Inicia o Flask
+    threading.Thread(target=run_flask, daemon=True).start()
 
-    # Inicia o Telegram
-    app_bot = Application.builder().token(TOKEN).build()
-    app_bot.add_handler(CommandHandler("start", start))
+    # Inicia o Bot (Forma recomendada para evitar AttributeError)
+    application = ApplicationBuilder().token(TOKEN).build()
     
-    # Postagem automática (90 min)
-    app_bot.job_queue.run_repeated(postar, interval=5400, first=10)
+    application.add_handler(CommandHandler("start", start))
+    
+    # Postagem automática (90 minutos)
+    job_queue = application.job_queue
+    job_queue.run_repeated(postar_no_grupo, interval=5400, first=10)
 
-    print("Bot rodando...")
-    app_bot.run_polling()
+    print("Iniciando Polling...")
+    application.run_polling(drop_pending_updates=True)
+    
