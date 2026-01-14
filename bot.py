@@ -1,18 +1,19 @@
 import os
 import threading
+import asyncio
 from flask import Flask
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-# Servidor Flask para estabilidade no Render
+# --- CONFIGURAÇÃO DO SERVIDOR FLASK (PARA O RENDER NÃO DORMIR) ---
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "Bot VIP Online!"
+    return "Bot VIP Online e Ativo!"
 
 def run_flask():
-    # Proteção: busca a porta 10000 ou a próxima disponível
+    # Tenta usar a porta 10000, se estiver ocupada pula para a próxima
     port = int(os.environ.get("PORT", 10000))
     while True:
         try:
@@ -21,43 +22,47 @@ def run_flask():
         except Exception:
             port += 1
 
-# Configurações do seu Negócio
+# --- CONFIGURAÇÕES DO SEU BOT ---
 TOKEN = "7287694923:AAGkz7SV5oQGKQ65NTleSeq_xVhuglutWL8"
 VIDEO_URL = "https://drive.google.com/uc?export=download&id=1g2HaGHeJaL3k_n5rHc61q3wlHOpqFp-N"
 ID_GRUPO_FREE = "-1002167637171"
+LINK_CURTO = "Https://Vipproibidao.short.gy/jfneGR"
 LINK_PAGAMENTO = "https://pay.infinitepay.io/vippagamentos25/25,00"
 
+# Texto formatado com o seu novo link curto
 TEXTO_VENDA = (
     "🔞 *ACESSO LIBERADO - VIP PROIBIDÃO* 🔞\n\n"
-    "Clique no botão abaixo para realizar o pagamento seguro via *InfinitePay*.\n\n"
-    "💳 *Valor: R$ 25,00* (Pix ou Cartão)\n"
-    "✅ *Aprovação automática e imediata!*"
+    "Para garantir sua vaga, acesse nosso portal:\n"
+    f"🔗 {LINK_CURTO}\n\n"
+    "💳 *VALOR: R$ 25,00* (Pix ou Cartão)\n"
+    "✅ *APROVAÇÃO AUTOMÁTICA E IMEDIATA!*"
 )
 
+# Botão que vai embaixo do vídeo
+BOTAO_COMPRAR = InlineKeyboardMarkup([
+    [InlineKeyboardButton("💳 PAGAR R$ 25,00 AGORA", url=LINK_PAGAMENTO)]
+])
+
+# --- FUNÇÕES DO BOT ---
+
+# Quando alguém clica em /start no privado
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [[InlineKeyboardButton("💳 PAGAR R$ 25,00 AGORA", url=LINK_PAGAMENTO)]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_video(video=VIDEO_URL, caption=TEXTO_VENDA, reply_markup=reply_markup, parse_mode='Markdown')
-
-async def postagem_automatica(context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [[InlineKeyboardButton("💳 PAGAR R$ 25,00 AGORA", url=LINK_PAGAMENTO)]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
     try:
-        await context.bot.send_video(chat_id=ID_GRUPO_FREE, video=VIDEO_URL, caption=TEXTO_VENDA, reply_markup=reply_markup, parse_mode='Markdown')
+        await update.message.reply_video(
+            video=VIDEO_URL, 
+            caption=TEXTO_VENDA, 
+            reply_markup=BOTAO_COMPRAR, 
+            parse_mode='Markdown'
+        )
     except Exception as e:
-        print(f"Erro na postagem automática: {e}")
+        print(f"Erro no privado: {e}")
 
-if __name__ == '__main__':
-    # Inicia o Flask em paralelo
-    threading.Thread(target=run_flask).start()
-    
-    # Inicia o Bot
-    application = Application.builder().token(TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-    
-    # Postagem no grupo a cada 90 minutos
-    job_queue = application.job_queue
-    job_queue.run_repeated(postagem_automatica, interval=5400, first=10)
-
-    application.run_polling()
-    
+# Função que envia no grupo automaticamente
+async def postagem_automatica(context: ContextTypes.DEFAULT_TYPE):
+    try:
+        await context.bot.send_video(
+            chat_id=ID_GRUPO_FREE, 
+            video=VIDEO_URL, 
+            caption=TEXTO_VENDA, 
+            reply_markup=BOTAO_COMPRAR, 
+            parse_mode
