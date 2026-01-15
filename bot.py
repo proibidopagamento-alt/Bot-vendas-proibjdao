@@ -11,7 +11,7 @@ def run_flask():
     app.run(host='0.0.0.0', port=port)
 
 # CONFIGURAÇÕES
-TOKEN = "7287694923:AAGkz7SV5oQGKQ65NTleSeq_xVhuglutWL8"
+TOKEN = "7287694923:AAGXgJoXEf9OkKmpxc0KaCYtcfHmE9-Ak7s"
 VIDEO = "https://drive.google.com/uc?export=download&id=1g2HaGHeJaL3k_n5rHc61q3wlHOpqFp-N"
 GRUPO_ID = "-1002167637171"
 MEU_ID_DONO = 5918744817
